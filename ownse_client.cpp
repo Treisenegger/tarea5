@@ -14,7 +14,40 @@
 #define SERVER "127.0.0.1"
 #define BUFLEN 512  //Max length of buffer
 #define PORT 1029   //The port on which to send data
- 
+
+bool is_number(const std::string &str)
+{
+    return str.find_first_not_of("0123456789") == std::string::npos;
+}
+
+bool is_ip(const std::string &str)
+{
+    int fp = 0, lp, num;
+    std::string subs, str2 = str;
+    for (int i = 0; i < 3; i++)
+    {
+	lp = str2.find(".");
+	if (lp > 3)
+	    return false;
+	subs = str2.substr(fp, lp-fp);
+	if (!is_number(subs) || subs == "")
+	    return false;
+	num = atoi(subs.c_str());
+	if (num > 255)
+	    return false;
+	str2 = str2.substr(lp+1);
+    }
+    subs = str2.substr(fp);
+    if (!is_number(subs) || subs == "")
+	return false;
+    num = atoi(subs.c_str());
+    if (num > 255)
+	return false;
+    return true;
+}
+
+
+
 void die(char *s)
 {
     perror(s);
@@ -26,7 +59,7 @@ int main(void)
     struct sockaddr_in si_other;
     int s, i, slen=sizeof(si_other);
     std::string buf;
-    std::string message;
+    std::string message, header, full_message, reverse;
  
     if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
     {
@@ -47,7 +80,13 @@ int main(void)
     {
         printf("Enter message : ");
         fgets(message, BUFLEN, stdin);
-         
+
+	if (is_ip(message))
+		reverse = "1";
+	else reverse = "0";
+
+	header = "";
+
         //send the message
         if (sendto(s, message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1)
         {

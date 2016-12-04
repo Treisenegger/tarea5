@@ -15,7 +15,7 @@
  
 #define BUFLEN 512  //Max length of buffer
 #define PORT 1029   //The port on which to listen for incoming data
-#define FILEROUTE ".\server.dns" //Route of file with dns information
+#define FILEROUTE "./server.dns" //Route of file with dns information
 
 class association
 {

@@ -7,15 +7,20 @@
 #include<unistd.h> //close();
 #include<arpa/inet.h>
 #include<sys/socket.h>
+#include<list>
+#include<bitset>
+#include<string>
+#include<iostream>
+#include<sstream>
  
 #define BUFLEN 512  //Max length of buffer
 #define PORT 1029   //The port on which to listen for incoming data
 #define FILEROUTE ".\server.dns" //Route of file with dns information
 
-struct association
+class association
 {
-	char name[50], value[50], type[50];
-	struct association * next_association;
+	public:
+		char name[50], value[50], type[50];
 }
 
 void die(char *s)
@@ -24,14 +29,12 @@ void die(char *s)
     exit(1);
 }
 
-struct list parseFile(route)
+std::list<association> parseFile(route)
 {
 	char name[50], value[50], type[10];
 	int ttl;
 	FILE * fid;
-	fpos_t pos;
-	int pos_init = 0;
-	struct association first_ass;
+	std::list<association> ass_list = {}
 
 	while(1)
 	{
@@ -40,23 +43,42 @@ struct list parseFile(route)
 		while(!feof(fid))
 		{
 			fscanf(fid, "%s %s %s %d", name, value, type, &ttl);
-			next_ass.name = name
-			next_ass.value = value
-			next_ass.type = type
-			struct association other_ass;
-			other_ass.next_association = &next_ass;
-			next_ass = other_ass;
+			association ass;
+			ass.name = name;
+			ass.value = value;
+			ass.type = type;
+			ass_list.push_back(ass);
 		}
 	}
+	return ass_list;
 }
- 
+
+sdt::string getStringFromBits(bits)
+{
+	std::string line = "";
+	for (int i = 96; i < bits.size(); i++)
+	{
+		line += bits[i].to_string()
+	}
+	std::istringstream in(line);
+	std::bitset<8> bs;
+	std::string myString = "";
+
+	while(in >> bs)
+		myString += char(bs.to_ulong());
+
+	return myString;
+}
+
 int main(void)
 {
     struct sockaddr_in si_me, si_other;
      
     int s, i, slen = sizeof(si_other) , recv_len;
-    char buf[BUFLEN];
-     
+    std::bitset<BUFLEN> buf;
+
+    std::list<association> ass_list = parseFile(FILEROUTE);
+
     //create a UDP socket
     if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
     {

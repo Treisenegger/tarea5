@@ -1,25 +1,29 @@
 /*
     Simple udp server
 */
-#include<stdio.h> //printf
-#include<string.h> //memset
-#include<stdlib.h> //exit(0);
-#include<unistd.h> //close();
-#include<arpa/inet.h>
-#include<sys/socket.h>
-#include<list>
-#include<string>
-#include<iostream>
-#include<sstream>
+#include <stdio.h> //printf
+#include <string.h> //memset
+#include <stdlib.h> //exit(0);
+#include <unistd.h> //close();
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <list>
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <fstream>
  
 #define BUFLEN 512  //Max length of buffer
 #define PORT 1029   //The port on which to listen for incoming data
 #define FILEROUTE "./server.dns" //Route of file with dns information
 
+using namespace std;
+
 class association
 {
 	public:
-		std::string name, value, type;
+		string name, value, type;
+		size_t ttl;
 };
 
 void die(char *s)
@@ -28,17 +32,17 @@ void die(char *s)
     exit(1);
 }
 
-list<string> split(string s) {
+list<string> split(string s, string sep) {
 
 	/*Splits a string on spaces.*/
 
 	list<string> l;
 
-	size_t i = 0, pos;
+	size_t i = 0, pos = 0;
 
 	while (pos != string::npos) {
 
-		pos = s.find(" ", i);
+		pos = s.find(sep, i);
 		l.push_back(s.substr(i, pos - i));
 		i = pos + 1;
 	}
@@ -59,7 +63,7 @@ list<association> parseFile(char * route)
 
 	if (server_data.is_open()) {
     	while ( getline (server_data,line) ) {
-    		l = split(line);
+    		l = split(line, " ");
 
     		association ass;
     		ass.name = l.front();
@@ -67,6 +71,8 @@ list<association> parseFile(char * route)
     		ass.value = l.front();
     		l.pop_front();
     		ass.type = l.front();
+    		l.pop_front();
+    		ass.ttl = stoi(l.front());
     		l.pop_front();
 
     		ass_list.push_back(ass);
@@ -84,10 +90,11 @@ int main(void)
 {
     struct sockaddr_in si_me, si_other;
      
-    int s, i, slen = sizeof(si_other) , recv_len;
-    std::string buf;
-    std::string recv_message, send_message, full_message;
-    std::list<association> ass_list = parseFile(FILEROUTE);
+    int s, i, recv_len;
+    socklen_t slen = sizeof(si_other);
+    string buf;
+    string recv_message, send_message, full_message;
+    list<association> ass_list = parseFile(FILEROUTE);
     association send_ass;
 
     //create a UDP socket
@@ -110,13 +117,13 @@ int main(void)
     }
      
     //keep listening for data
-    while(1)
+    while("The world exists")
     {
-    	std::string header;
+    	string header;
         fflush(stdout);
          
         //try to receive some data, this is a blocking call
-        if ((recv_len = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1)
+        if ((recv_len = recvfrom(s, &buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1)
         {
             die("recvfrom()");
         }
@@ -129,38 +136,39 @@ int main(void)
 	header += "1";
 	//Los siguientes 4 elementos dependen del tipo de query y son igual nelse  mnsaje entrante
 	header += buf.substr(17,4);
+
 	//En found guardaremos si encontramos la asociación
 	int found = 0;
 	//Si el elemento en la posición 18 es un 1 significa que es una reverse query
 	if (buf.substr(18,1) == "1") {
 		//Recorremos la lista buscando la asociación
-		for (list<association>::iterator it = l.begin(); it != l.end(); it++) {
+		for (list<association>::iterator it = ass_list.begin(); it != ass_list.end(); it++) {
 			//Si encontramos la asociación decimos que nuestro mensaje será NAME,VALUE,TYPE
 			if ((*it).value == recv_message) {
-				send_message = (*it).name + "," + (*it).value + "," + (*it).type;
+				send_message = (*it).name + "," + (*it).value + "," + (*it).type + "," + to_string((*it).ttl);
 				//El siguiente bit del header es 1 si la asociación es authoritative
 				if ((*it).type == "A")
 					header += "1";
 				else
 					header += "0";
 				found = 1;
-				break
+				break;
 			}
 		}
 	}
 	else {
 		//Recorremos la lista buscando la asociación
-		for (list<association>::iterator it = l.begin(); it != l.end(); it++) {
+		for (list<association>::iterator it = ass_list.begin(); it != ass_list.end(); it++) {
 			//Si encontramos la asociación decimos que nuestro mensaje será NAME,VALUE,TYPE
 			if ((*it).name == recv_message) {
-				send_message = (*it).name + "," + (*it).value + "," + (*it).type;
+				send_message = (*it).name + "," + (*it).value + "," + (*it).type + "," + to_string((*it).ttl);
 				//El siguiente bit del header es 1 si la asociación es authoritative
 				if ((*it).type == "A")
 					header += "1";
 				else
 					header += "0";
 				found = 1;
-				break
+				break;
 			}
 		}
 	}
@@ -186,8 +194,8 @@ int main(void)
 	//Juntamos header con data para formar el mensaje completo
 	full_message = header + send_message;
 
-        //now reply the client with the same data
-        if (sendto(s, full_message, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1)
+        //now reply the client
+        if (sendto(s, &full_message, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1)
         {
             die("sendto()");
         }

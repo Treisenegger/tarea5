@@ -87,7 +87,8 @@ void die(char *s)
 int main(void)
 {
     struct sockaddr_in si_other;
-    int s, i, slen=sizeof(si_other);
+    int s, i;
+    socklen_t slen=sizeof(si_other);
     std::string buf;
     std::string message, header, full_message, reverse;
  
@@ -109,11 +110,11 @@ int main(void)
     while("Life is terrible")
     {
         printf("Enter message : ");
-        fgets(message, BUFLEN, stdin);
+        getline(cin,message);
 
-		if (is_ip(message))
-			reverse = "1";
-		else reverse = "0";
+	if (is_ip(message))
+		reverse = "1";
+	else reverse = "0";
 
 	header = "";
 	header = n_rand_bits(16) + "00" + reverse + "00000000000000000000000000001000000000000000000000000000000000000000000000000";
@@ -121,10 +122,12 @@ int main(void)
 	full_message = header + message;
 
         //send the message
-        if (sendto(s, full_message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1)
+        if (sendto(s, &full_message, full_message.size() , 0 , (struct sockaddr *) &si_other, slen)==-1)
         {
             die("sendto()");
         }
+
+	cout << full_message << endl;
 
 	int received = 0;
 	while(!received) {
@@ -163,7 +166,7 @@ int main(void)
 				full_message = header + value;
 
 				//send the message
-				if (sendto(s, full_message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1)
+				if (sendto(s, &full_message, full_message.size() , 0 , (struct sockaddr *) &si_other, slen)==-1)
 				{
 				    die("sendto()");
 				}
@@ -173,8 +176,6 @@ int main(void)
 		else {
 			cout << "Host " + r_mess.substr(4) + " not found";
 		}
-
-		puts(buf);
 	}
     }
  

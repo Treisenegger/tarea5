@@ -133,16 +133,21 @@ int main(void)
         {
             die("recvfrom()");
         }
+	
+	cout << buf << endl;
 
 	//El mensaje en sí está después del header que tiene largo 96
 	recv_message = buf.substr(96);
+	cout << buf << endl;
 	//Los primeros 16 elementos son el identificador del mensaje que es igual al del mensaje entrante
 	header = buf.substr(0,16);
+	cout << header << endl;
 	//El siguiente elemento es un 1, dado que es una response
 	header += "1";
+	cout << header << endl;
 	//Los siguientes 4 elementos dependen del tipo de query y son igual nelse  mnsaje entrante
 	header += buf.substr(17,4);
-
+	cout << header << endl;
 	//En found guardaremos si encontramos la asociación
 	int found = 0;
 	//Si el elemento en la posición 18 es un 1 significa que es una reverse query
@@ -152,11 +157,13 @@ int main(void)
 			//Si encontramos la asociación decimos que nuestro mensaje será NAME,VALUE,TYPE
 			if ((*it).value == recv_message) {
 				send_message = (*it).name + "," + (*it).value + "," + (*it).type + "," + to_string((*it).ttl);
+				cout << send_message << endl;
 				//El siguiente bit del header es 1 si la asociación es authoritative
 				if ((*it).type == "A")
 					header += "1";
 				else
 					header += "0";
+				cout << header << endl;
 				found = 1;
 				break;
 			}

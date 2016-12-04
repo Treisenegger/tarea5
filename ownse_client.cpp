@@ -115,13 +115,10 @@ int main(void)
 			reverse = "1";
 		else reverse = "0";
 
-<<<<<<< 5b0875a6589309dfe3be38638fcabc9a491f85d8
-		header = "";
-=======
+	header = "";
 	header = n_rand_bits(16) + "00" + reverse + "00000000000000000000000000001000000000000000000000000000000000000000000000000";
 
 	full_message = header + message;
->>>>>>> client ready?
 
         //send the message
         if (sendto(s, full_message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1)

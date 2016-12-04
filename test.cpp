@@ -11,19 +11,13 @@
 #include<sstream>
 
 
-sdt::string getStringFromBits(bits)
+int main()
 {
-	std::string line = "";
-	for (int i = 96; i < bits.size(); i++)
-	{
-		line += bits[i].to_string()
-	}
-	std::istringstream in(line);
-	std::bitset<8> bs;
-	std::string myString = "";
-
-	while(in >> bs)
-		myString += char(bs.to_ulong());
-
-	return myString;
+std::string myString = "Hello World!";
+std::string myOtherString = "!!!!";
+std::string myThirdString = myString + "," + myOtherString;
+std::cout << myThirdString;
+for (int i = 0; i < myThirdString.size(); i++)
+	std::cout << std::bitset<8> b(myThirdString[i]);
 }
+

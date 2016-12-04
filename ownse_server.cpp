@@ -20,8 +20,8 @@
 class association
 {
 	public:
-		char name[50], value[50], type[50];
-}
+		std::string name, value, type;
+};
 
 void die(char *s)
 {
@@ -29,17 +29,16 @@ void die(char *s)
     exit(1);
 }
 
-std::list<association> parseFile(route)
+std::list<association> parseFile(char * route)
 {
-	char name[50], value[50], type[10];
+	std::string name, value, type;
 	int ttl;
 	FILE * fid;
-	std::list<association> ass_list = {}
+	std::list<association> ass_list = {};
 
 	while(1)
 	{
 		fid = fopen(route, "r");
-		struct association next_ass = first_ass;
 		while(!feof(fid))
 		{
 			fscanf(fid, "%s %s %s %d", name, value, type, &ttl);
@@ -53,7 +52,8 @@ std::list<association> parseFile(route)
 	return ass_list;
 }
 
-sdt::string getStringFromBits(bits)
+template <size_t bitesize>
+sdt::string getStringFromBits(std::bitset<bitesize> bits)
 {
 	std::string line = "";
 	for (int i = 96; i < bits.size(); i++)
@@ -76,8 +76,9 @@ int main(void)
      
     int s, i, slen = sizeof(si_other) , recv_len;
     std::bitset<BUFLEN> buf;
-
+    std::string recv_message, send_message;
     std::list<association> ass_list = parseFile(FILEROUTE);
+    association send_ass;
 
     //create a UDP socket
     if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
@@ -111,9 +112,31 @@ int main(void)
         }
          
         //print details of the client/peer and the data received
-        printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-        printf("Data: %s\n" , buf);
-         
+        /*printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
+        printf("Data: %s\n" , buf);*/
+
+	recv_message = getStringFromBits(buf);
+
+	//Si el bit en la posición 18 (partiendo desde 0) es un 1 significa que se trata de una query reversa
+	if (!buf.test(18))
+	{
+		//Verificar que el largo de las listas se encuentra con .size()
+		for (int i = 0; i < ass_list.size(), i++)
+		{
+			if (ass_list[i].value == recv_message)
+				send_ass = ass_list[i];
+				break
+		}
+		if (send_ass)
+			send_message = send_ass.name + "," + send_ass.value + "," + send_ass.type;
+	}
+	else
+	{
+		
+	}
+
+
+
         //now reply the client with the same data
         if (sendto(s, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1)
         {

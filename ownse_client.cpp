@@ -13,7 +13,7 @@
 #include<cstdlib>
  
 #define SERVER "127.0.0.1"
-#define BUFLEN 512  //Max length of buffer
+#define BUFLEN 1024  //Max length of buffer
 #define PORT 1029   //The port on which to send data
 
 using namespace std;
@@ -89,7 +89,7 @@ int main(void)
     struct sockaddr_in si_other;
     int s, i;
     socklen_t slen=sizeof(si_other);
-    std::string buf;
+    char buf2[BUFLEN];
     std::string message, header, full_message, reverse;
  
     if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
@@ -122,7 +122,7 @@ int main(void)
 	full_message = header + message;
 
         //send the message
-        if (sendto(s, &full_message, full_message.size() , 0 , (struct sockaddr *) &si_other, slen)==-1)
+        if (sendto(s, full_message.c_str(), full_message.size() , 0 , (struct sockaddr *) &si_other, slen)==-1)
         {
             die("sendto()");
         }
@@ -133,12 +133,16 @@ int main(void)
 	while(!received) {
 		//receive a reply and print it
 		//clear the buffer by filling null, it might have previously received data
-		memset(&buf,'\0', BUFLEN);
+		memset(&buf2,'\0', BUFLEN);
 		//try to receive some data, this is a blocking call
-		if (recvfrom(s, &buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1)
+		if (recvfrom(s, &buf2, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1)
 		{
 		    die("recvfrom()");
 		}
+
+		cout << buf2 << endl;
+
+		string buf(buf2);
 
 		string r_mess = buf.substr(96);
 
@@ -153,20 +157,20 @@ int main(void)
 				string value = *it;
 				it--;
 				string name = *it;
-				cout << name + " has address" + value;
+				cout << name + " has address " + value << endl;
 			}
 			else {
 				it--;
 				string value = *it;
 				it--;
 				string name = *it;
-				cout << name + " is an alias for " + value;
+				cout << name + " is an alias for " + value << endl;
 				header = n_rand_bits(16) + "00" + reverse + "00000000000000000000000000001000000000000000000000000000000000000000000000000";
 
 				full_message = header + value;
 
 				//send the message
-				if (sendto(s, &full_message, full_message.size() , 0 , (struct sockaddr *) &si_other, slen)==-1)
+				if (sendto(s, full_message.c_str(), full_message.size() , 0 , (struct sockaddr *) &si_other, slen)==-1)
 				{
 				    die("sendto()");
 				}
@@ -174,7 +178,8 @@ int main(void)
 			}
 		}
 		else {
-			cout << "Host " + r_mess.substr(4) + " not found";
+			cout << "Host " + r_mess.substr(4) + " not found" << endl;
+			received = 1;
 		}
 	}
     }

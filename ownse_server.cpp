@@ -83,7 +83,6 @@ list<association> parseFile(char * route)
   	else cout << "Unable to open file"; 
 
   	return ass_list;
-
 }
 
 int main(void)
@@ -95,6 +94,13 @@ int main(void)
     string buf;
     string recv_message, send_message, full_message;
     list<association> ass_list = parseFile(FILEROUTE);
+
+    cout << "Associations:\n";
+  	for (list<association>::iterator it = ass_list.begin(); it != ass_list.end(); it++) {
+  		cout << '\t' << (*it).name << " " << (*it).value << " " << (*it).type << " " << to_string((*it).ttl) << '\n';
+  	}
+  	cout << "\n\n";
+
     association send_ass;
 
     //create a UDP socket

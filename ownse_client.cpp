@@ -76,16 +76,16 @@ int main(void)
         exit(1);
     }
  
-    while(1)
+    while("Life is terrible")
     {
         printf("Enter message : ");
         fgets(message, BUFLEN, stdin);
 
-	if (is_ip(message))
-		reverse = "1";
-	else reverse = "0";
+		if (is_ip(message))
+			reverse = "1";
+		else reverse = "0";
 
-	header = "";
+		header = "";
 
         //send the message
         if (sendto(s, message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1)

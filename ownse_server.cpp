@@ -52,31 +52,13 @@ std::list<association> parseFile(char * route)
 	return ass_list;
 }
 
-template <size_t bitesize>
-sdt::string getStringFromBits(std::bitset<bitesize> bits)
-{
-	std::string line = "";
-	for (int i = 96; i < bits.size(); i++)
-	{
-		line += bits[i].to_string()
-	}
-	std::istringstream in(line);
-	std::bitset<8> bs;
-	std::string myString = "";
-
-	while(in >> bs)
-		myString += char(bs.to_ulong());
-
-	return myString;
-}
-
 int main(void)
 {
     struct sockaddr_in si_me, si_other;
      
     int s, i, slen = sizeof(si_other) , recv_len;
-    std::bitset<BUFLEN> buf;
-    std::string recv_message, send_message;
+    std::string buf;
+    std::string recv_message, send_message, full_message;
     std::list<association> ass_list = parseFile(FILEROUTE);
     association send_ass;
 
@@ -102,7 +84,7 @@ int main(void)
     //keep listening for data
     while(1)
     {
-        printf("Waiting for data...");
+    	std::string header;
         fflush(stdout);
          
         //try to receive some data, this is a blocking call
@@ -110,35 +92,71 @@ int main(void)
         {
             die("recvfrom()");
         }
-         
-        //print details of the client/peer and the data received
-        /*printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-        printf("Data: %s\n" , buf);*/
 
-	recv_message = getStringFromBits(buf);
-
-	//Si el bit en la posición 18 (partiendo desde 0) es un 1 significa que se trata de una query reversa
-	if (!buf.test(18))
-	{
-		//Verificar que el largo de las listas se encuentra con .size()
-		for (int i = 0; i < ass_list.size(), i++)
-		{
-			if (ass_list[i].value == recv_message)
-				send_ass = ass_list[i];
+	//El mensaje en sí está después del header que tiene largo 96
+	recv_message = buf.substr(96);
+	//Los primeros 16 elementos son el identificador del mensaje que es igual al del mensaje entrante
+	header = buf.substr(0,16);
+	//El siguiente elemento es un 1, dado que es una response
+	header += "1";
+	//Los siguientes 4 elementos dependen del tipo de query y son igual nelse  mnsaje entrante
+	header += buf.substr(17,4);
+	//En found guardaremos si encontramos la asociación
+	int found = 0;
+	//Si el elemento en la posición 18 es un 1 significa que es una reverse query
+	if (buf.substr(18,1) == "1") {
+		//Recorremos la lista buscando la asociación
+		for (int i = 0; i < ass_list.size(); i++) {
+			//Si encontramos la asociación decimos que nuestro mensaje será NAME,VALUE,TYPE
+			if (ass_list[i].value == recv_message) {
+				send_message = ass_list[i].name + "," + ass_list[i].value + "," + ass_list[i].type;
+				//El siguiente bit del header es 1 si la asociación es authoritative
+				if (type == "A")
+					header += "1";
+				else
+					header += "0";
+				found = 1;
 				break
+			}
 		}
-		if (send_ass)
-			send_message = send_ass.name + "," + send_ass.value + "," + send_ass.type;
 	}
+	else {
+		for (int i = 0; i < ass_list.size(); i++) {
+			if (ass_list[i].name == recv_message) {
+				send_message = ass_list[i].name + "," + ass_list[i].value + "," + ass_list[i].type;
+				if (type == "A")
+					header += "1";
+				else
+					header += "0";
+				found = 1;
+				break
+			}
+		}
+	}
+	//Si no se encuentra el hostname que se estaba buscando enviamos un mensaje que indique que no se encontró
+	if (!found) {
+		send_message = "NONE";
+		header += "0";
+	}
+	//Los siguientes 6 bits son 0
+	header += "000000";
+	//Nuestro código de éxito es 0000 y el de fracaso es 1111
+	if (found)
+		header += "0000";
 	else
-	{
-		
-	}
+		header += "1111";
 
+	//Los siguientes bits dependen de casi nada
+	header += "0000000000000001";
+	header += "0000000000000001";
+	header += "0000000000000000";
+	header += "0000000000000000";
 
+	//Juntamos header con data para formar el mensaje completo
+	full_message = header + send_message;
 
         //now reply the client with the same data
-        if (sendto(s, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1)
+        if (sendto(s, full_message, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1)
         {
             die("sendto()");
         }

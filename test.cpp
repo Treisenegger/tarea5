@@ -13,11 +13,8 @@
 
 int main()
 {
-std::string myString = "Hello World!";
-std::string myOtherString = "!!!!";
-std::string myThirdString = myString + "," + myOtherString;
-std::cout << myThirdString;
-for (int i = 0; i < myThirdString.size(); i++)
-	std::cout << std::bitset<8> b(myThirdString[i]);
+int i = 1;
+if (i) {
+std::cout << i;
 }
-
+}

@@ -10,10 +10,13 @@
 #include<list>
 #include<iostream>
 #include<sstream>
+#include<cstdlib>
  
 #define SERVER "127.0.0.1"
 #define BUFLEN 512  //Max length of buffer
 #define PORT 1029   //The port on which to send data
+
+using namespace std;
 
 bool is_number(const std::string &str)
 {
@@ -46,7 +49,34 @@ bool is_ip(const std::string &str)
     return true;
 }
 
+std::string n_rand_bits(int n)
+{
+	std::string newString;
+	for (int i = 0; i < n; i++)
+		{
+			newString += std::to_string(rand()%2);
+		}
+	return newString;
+}
 
+list<string> split(string s, string sep) {
+
+	/*Splits a string on sep.*/
+
+	list<string> l;
+
+	size_t i = 0, pos = 0;
+
+	while (pos != string::npos) {
+
+		pos = s.find(sep, i);
+		l.push_back(s.substr(i, pos - i));
+		i = pos + 1;
+	}
+
+	return l;
+
+}
 
 void die(char *s)
 {
@@ -85,24 +115,70 @@ int main(void)
 			reverse = "1";
 		else reverse = "0";
 
+<<<<<<< 5b0875a6589309dfe3be38638fcabc9a491f85d8
 		header = "";
+=======
+	header = n_rand_bits(16) + "00" + reverse + "00000000000000000000000000001000000000000000000000000000000000000000000000000";
+
+	full_message = header + message;
+>>>>>>> client ready?
 
         //send the message
-        if (sendto(s, message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1)
+        if (sendto(s, full_message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1)
         {
             die("sendto()");
         }
-         
-        //receive a reply and print it
-        //clear the buffer by filling null, it might have previously received data
-        memset(buf,'\0', BUFLEN);
-        //try to receive some data, this is a blocking call
-        if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1)
-        {
-            die("recvfrom()");
-        }
-         
-        puts(buf);
+
+	int received = 0;
+	while(!received) {
+		//receive a reply and print it
+		//clear the buffer by filling null, it might have previously received data
+		memset(&buf,'\0', BUFLEN);
+		//try to receive some data, this is a blocking call
+		if (recvfrom(s, &buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1)
+		{
+		    die("recvfrom()");
+		}
+
+		string r_mess = buf.substr(96);
+
+		if (r_mess.substr(0, 4) != "NONE") {
+
+			list<string> mess_list = split(r_mess, ",");
+			list<string>::iterator it = mess_list.begin();
+			advance(it, 2);
+			if (*it == "A") {
+				received = 1;
+				it--;
+				string value = *it;
+				it--;
+				string name = *it;
+				cout << name + " has address" + value;
+			}
+			else {
+				it--;
+				string value = *it;
+				it--;
+				string name = *it;
+				cout << name + " is an alias for " + value;
+				header = n_rand_bits(16) + "00" + reverse + "00000000000000000000000000001000000000000000000000000000000000000000000000000";
+
+				full_message = header + value;
+
+				//send the message
+				if (sendto(s, full_message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1)
+				{
+				    die("sendto()");
+				}
+
+			}
+		}
+		else {
+			cout << "Host " + r_mess.substr(4) + " not found";
+		}
+
+		puts(buf);
+	}
     }
  
     close(s);

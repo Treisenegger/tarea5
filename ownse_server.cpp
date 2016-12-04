@@ -180,7 +180,7 @@ int main(void)
 	}
 	//Si no se encuentra el hostname que se estaba buscando enviamos un mensaje que indique que no se encontró
 	if (!found) {
-		send_message = "NONE";
+		send_message = "NONE" + recv_message;
 		header += "0";
 	}
 	//Los siguientes 6 bits son 0

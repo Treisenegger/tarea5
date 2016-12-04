@@ -109,7 +109,7 @@ int main(void)
  
     while("Life is terrible")
     {
-        cout << "Enter name: ";
+        cout << "Enter name or ip: ";
         getline(cin,message);
 
 	if (is_ip(message))

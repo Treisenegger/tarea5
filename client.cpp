@@ -109,7 +109,7 @@ int main(void)
  
     while("Life is terrible")
     {
-        printf("Enter message : ");
+        cout << "Enter name: ";
         getline(cin,message);
 
 	if (is_ip(message))
@@ -127,8 +127,6 @@ int main(void)
             die("sendto()");
         }
 
-	cout << full_message << endl;
-
 	int received = 0;
 	while(!received) {
 		//receive a reply and print it
@@ -139,8 +137,6 @@ int main(void)
 		{
 		    die("recvfrom()");
 		}
-
-		cout << buf2 << endl;
 
 		string buf(buf2);
 

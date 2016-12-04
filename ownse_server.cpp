@@ -28,27 +28,56 @@ void die(char *s)
     exit(1);
 }
 
-std::list<association> parseFile(char * route)
-{
-	std::string name, value, type;
-	int ttl;
-	FILE * fid;
-	std::list<association> ass_list = {};
+list<string> split(string s) {
 
-	while(1)
-	{
-		fid = fopen(route, "r");
-		while(!feof(fid))
-		{
-			fscanf(fid, "%s %s %s %d", name, value, type, &ttl);
-			association ass;
-			ass.name = name;
-			ass.value = value;
-			ass.type = type;
-			ass_list.push_back(ass);
-		}
+	/*Splits a string on spaces.*/
+
+	list<string> l;
+
+	size_t i = 0, pos;
+
+	while (pos != string::npos) {
+
+		pos = s.find(" ", i);
+		l.push_back(s.substr(i, pos - i));
+		i = pos + 1;
 	}
-	return ass_list;
+
+	return l;
+
+}
+
+list<association> parseFile(char * route)
+{
+	list<association> ass_list;
+	list<string> l;
+
+
+	string line;
+	ifstream server_data (route);
+
+
+	if (server_data.is_open()) {
+    	while ( getline (server_data,line) ) {
+    		l = split(line);
+
+    		association ass;
+    		ass.name = l.front();
+    		l.pop_front();
+    		ass.value = l.front();
+    		l.pop_front();
+    		ass.type = l.front();
+    		l.pop_front();
+
+    		ass_list.push_back(ass);
+    	}
+    	server_data.close();
+  	}
+
+  	else cout << "Unable to open file"; 
+
+  	return ass_list;
+
 }
 
 int main(void)
@@ -105,12 +134,12 @@ int main(void)
 	//Si el elemento en la posición 18 es un 1 significa que es una reverse query
 	if (buf.substr(18,1) == "1") {
 		//Recorremos la lista buscando la asociación
-		for (int i = 0; i < ass_list.size(); i++) {
+		for (list<association>::iterator it = l.begin(); it != l.end(); it++) {
 			//Si encontramos la asociación decimos que nuestro mensaje será NAME,VALUE,TYPE
-			if (ass_list[i].value == recv_message) {
-				send_message = ass_list[i].name + "," + ass_list[i].value + "," + ass_list[i].type;
+			if ((*it).value == recv_message) {
+				send_message = (*it).name + "," + (*it).value + "," + (*it).type;
 				//El siguiente bit del header es 1 si la asociación es authoritative
-				if (type == "A")
+				if ((*it).type == "A")
 					header += "1";
 				else
 					header += "0";
@@ -120,10 +149,13 @@ int main(void)
 		}
 	}
 	else {
-		for (int i = 0; i < ass_list.size(); i++) {
-			if (ass_list[i].name == recv_message) {
-				send_message = ass_list[i].name + "," + ass_list[i].value + "," + ass_list[i].type;
-				if (type == "A")
+		//Recorremos la lista buscando la asociación
+		for (list<association>::iterator it = l.begin(); it != l.end(); it++) {
+			//Si encontramos la asociación decimos que nuestro mensaje será NAME,VALUE,TYPE
+			if ((*it).name == recv_message) {
+				send_message = (*it).name + "," + (*it).value + "," + (*it).type;
+				//El siguiente bit del header es 1 si la asociación es authoritative
+				if ((*it).type == "A")
 					header += "1";
 				else
 					header += "0";

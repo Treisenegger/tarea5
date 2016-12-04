@@ -8,7 +8,6 @@
 #include<arpa/inet.h>
 #include<sys/socket.h>
 #include<list>
-#include<bitset>
 #include<string>
 #include<iostream>
 #include<sstream>

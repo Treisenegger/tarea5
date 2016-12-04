@@ -11,10 +11,11 @@
 #include<sstream>
 
 
-int main()
-{
-int i = 1;
-if (i) {
-std::cout << i;
+int main() {
+ std::string myString = "1542Hello6156512aASdasd6a121156as1d61as1d1a6s16d5as";
+ for (int i = 0; i < myString.size(); i++) {
+ if (char(myString[i]).isdigit()) {
+ std::cout << myString[i];
+}
 }
 }

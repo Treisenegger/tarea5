@@ -7,9 +7,12 @@
 #include<unistd.h> //close();
 #include<arpa/inet.h>
 #include<sys/socket.h>
+#include<list>
+#include<iostream>
+#include<sstream>
  
 #define SERVER "127.0.0.1"
-#define BUFLEN 512  //Max length of buffe
+#define BUFLEN 512  //Max length of buffer
 #define PORT 1029   //The port on which to send data
  
 void die(char *s)
@@ -22,8 +25,8 @@ int main(void)
 {
     struct sockaddr_in si_other;
     int s, i, slen=sizeof(si_other);
-    char buf[BUFLEN], rbuf[BUFLEN];
-    char message[BUFLEN];
+    std::string buf;
+    std::string message;
  
     if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
     {
